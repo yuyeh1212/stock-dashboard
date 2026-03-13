@@ -1,165 +1,219 @@
-import { useState, useEffect, useRef } from 'react'
-import './App.css'
+import { useState, useEffect, useRef } from "react";
+import "./App.css";
+import api from "./api/client";
 
 function useAuth() {
-  const [user, setUser] = useState(null)
-  const [authStatus, setAuthStatus] = useState('loading')
+  const [user, setUser] = useState(null);
+  const [authStatus, setAuthStatus] = useState("loading");
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const urlToken = urlParams.get('token')
-    const storedToken = localStorage.getItem('bind_token')
-    const token = urlToken || storedToken
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get("token");
+    const storedToken = localStorage.getItem("bind_token");
+    const token = urlToken || storedToken;
 
     if (!token) {
-      setAuthStatus('unbound')
-      return
+      setAuthStatus("unbound");
+      return;
     }
 
     if (urlToken) {
-      localStorage.setItem('bind_token', urlToken)
-      window.history.replaceState({}, '', window.location.pathname)
+      localStorage.setItem("bind_token", urlToken);
+      window.history.replaceState({}, "", window.location.pathname);
     }
 
-    setUser({ token })
-    setAuthStatus('bound')
-  }, [])
+    setUser({ token });
+    setAuthStatus("bound");
+  }, []);
 
-  return { user, authStatus }
+  return { user, authStatus };
 }
 
 function Clock() {
-  const [time, setTime] = useState(new Date())
+  const [time, setTime] = useState(new Date());
   useEffect(() => {
-    const t = setInterval(() => setTime(new Date()), 1000)
-    return () => clearInterval(t)
-  }, [])
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
   return (
     <span className="clock">
-      {time.toLocaleTimeString('zh-TW', { hour12: false })}
+      {time.toLocaleTimeString("zh-TW", { hour12: false })}
     </span>
-  )
+  );
 }
 
 function StatCard({ value, label, highlight }) {
   return (
     <div className="stat-card">
-      <div className={`stat-value ${highlight ? 'highlight' : ''}`}>{value}</div>
+      <div className={`stat-value ${highlight ? "highlight" : ""}`}>
+        {value}
+      </div>
       <div className="stat-label">{label}</div>
     </div>
-  )
+  );
 }
 
 function LogConsole({ logs }) {
-  const ref = useRef(null)
+  const ref = useRef(null);
   useEffect(() => {
-    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight
-  }, [logs])
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
+  }, [logs]);
   return (
     <div className="log-console" ref={ref}>
-      {logs.length === 0
-        ? <span className="log-empty">等待系統訊息...</span>
-        : logs.map((log, i) => (
-            <div key={i} className={`log-line ${log.type}`}>
-              <span className="log-time">{log.time}</span>
-              <span className="log-msg">{log.msg}</span>
-            </div>
-          ))
-      }
+      {logs.length === 0 ? (
+        <span className="log-empty">等待系統訊息...</span>
+      ) : (
+        logs.map((log, i) => (
+          <div key={i} className={`log-line ${log.type}`}>
+            <span className="log-time">{log.time}</span>
+            <span className="log-msg">{log.msg}</span>
+          </div>
+        ))
+      )}
     </div>
-  )
+  );
 }
 
 function QuotePanel({ quotes, isMonitoring }) {
   if (!isMonitoring || quotes.length === 0) {
     return (
       <div className="quote-empty">
-        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" className="radar-svg">
-          <circle cx="40" cy="40" r="35" stroke="#1a3a3a" strokeWidth="2"/>
-          <circle cx="40" cy="40" r="22" stroke="#1a3a3a" strokeWidth="1.5"/>
-          <circle cx="40" cy="40" r="10" stroke="#00ff88" strokeWidth="1" opacity="0.5"/>
-          <line x1="40" y1="40" x2="40" y2="5" stroke="#00ff88" strokeWidth="1.5" strokeLinecap="round"/>
-          <path d="M40 40 L65 20" stroke="#00ff88" strokeWidth="1" opacity="0.3"/>
+        <svg
+          width="80"
+          height="80"
+          viewBox="0 0 80 80"
+          fill="none"
+          className="radar-svg"
+        >
+          <circle cx="40" cy="40" r="35" stroke="#1a3a3a" strokeWidth="2" />
+          <circle cx="40" cy="40" r="22" stroke="#1a3a3a" strokeWidth="1.5" />
+          <circle
+            cx="40"
+            cy="40"
+            r="10"
+            stroke="#00ff88"
+            strokeWidth="1"
+            opacity="0.5"
+          />
+          <line
+            x1="40"
+            y1="40"
+            x2="40"
+            y2="5"
+            stroke="#00ff88"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <path
+            d="M40 40 L65 20"
+            stroke="#00ff88"
+            strokeWidth="1"
+            opacity="0.3"
+          />
         </svg>
         <p>輸入股票代號，按下啟動監控</p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="quote-grid">
       {quotes.map((q, i) => (
-        <div key={i} className={`quote-card ${parseFloat(q.change) > 0 ? 'up' : parseFloat(q.change) < 0 ? 'down' : ''}`}>
+        <div
+          key={i}
+          className={`quote-card ${parseFloat(q.change) > 0 ? "up" : parseFloat(q.change) < 0 ? "down" : ""}`}
+        >
           <div className="quote-header">
             <span className="quote-symbol">{q.symbol}</span>
             {q.limitUp && <span className="limit-badge">漲停</span>}
           </div>
           <div className="quote-price">{q.price}</div>
           <div className="quote-change">
-            {parseFloat(q.change) > 0 ? '▲' : parseFloat(q.change) < 0 ? '▼' : '─'}
-            {' '}{Math.abs(parseFloat(q.change))}%
+            {parseFloat(q.change) > 0
+              ? "▲"
+              : parseFloat(q.change) < 0
+                ? "▼"
+                : "─"}{" "}
+            {Math.abs(parseFloat(q.change))}%
           </div>
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 export default function App() {
-  const { user, authStatus } = useAuth()
-  const [symbols, setSymbols] = useState('')
-  const [isMonitoring, setIsMonitoring] = useState(false)
-  const [logs, setLogs] = useState([])
-  const [quotes, setQuotes] = useState([])
-  const [stats, setStats] = useState({ watchCount: 0, alertCount: 0, lastUpdate: '--', nextUpdate: '--' })
+  const { user, authStatus } = useAuth();
+  const [symbols, setSymbols] = useState("");
+  const [isMonitoring, setIsMonitoring] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [quotes, setQuotes] = useState([]);
+  const [stats, setStats] = useState({
+    watchCount: 0,
+    alertCount: 0,
+    lastUpdate: "--",
+    nextUpdate: "--",
+  });
 
-  const addLog = (msg, type = 'info') => {
-    const time = new Date().toLocaleTimeString('zh-TW', { hour12: false })
-    setLogs(prev => [...prev.slice(-99), { time, msg, type }])
-  }
+  const addLog = (msg, type = "info") => {
+    const time = new Date().toLocaleTimeString("zh-TW", { hour12: false });
+    setLogs((prev) => [...prev.slice(-99), { time, msg, type }]);
+  };
 
-  const handleStart = () => {
-    const list = symbols.trim().split('\n').map(s => s.trim()).filter(Boolean)
-    if (list.length === 0) {
-      addLog('請輸入至少一個股票代號', 'warn')
-      return
+  const intervalRef = useRef(null);
+
+  const fetchQuotes = async (list) => {
+    try {
+      const { data } = await api.get("/stocks/quotes", {
+        params: { symbols: list.join(",") },
+      });
+      const quotes = data.quotes.filter(q => !q.error)
+      setQuotes(data);
+      const now = new Date();
+      const next = new Date(now.getTime() + 60000);
+      setStats({
+        watchCount: list.length,
+        alertCount: data.filter((q) => q.limitUp).length,
+        lastUpdate: now.toLocaleTimeString("zh-TW", { hour12: false }),
+        nextUpdate: next.toLocaleTimeString("zh-TW", { hour12: false }),
+      });
+    } catch (e) {
+      addLog(`取得報價失敗：${e.message}`, "error");
     }
-    setIsMonitoring(true)
+  };
 
-    const mockQuotes = list.map(sym => ({
-      symbol: sym,
-      price: (Math.random() * 500 + 50).toFixed(2),
-      change: (Math.random() * 20 - 10).toFixed(2),
-      limitUp: Math.random() > 0.9
-    }))
-    setQuotes(mockQuotes)
-
-    const now = new Date()
-    const next = new Date(now.getTime() + 60000)
-    setStats({
-      watchCount: list.length,
-      alertCount: mockQuotes.filter(q => q.limitUp).length,
-      lastUpdate: now.toLocaleTimeString('zh-TW', { hour12: false }),
-      nextUpdate: next.toLocaleTimeString('zh-TW', { hour12: false })
-    })
-    addLog(`開始監控 ${list.length} 檔：${list.join(', ')}`, 'success')
-  }
+  const handleStart = async () => {
+    const list = symbols
+      .trim()
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (list.length === 0) {
+      addLog("請輸入至少一個股票代號", "warn");
+      return;
+    }
+    setIsMonitoring(true);
+    addLog(`開始監控 ${list.length} 檔：${list.join(", ")}`, "success");
+    await fetchQuotes(list);
+    intervalRef.current = setInterval(() => fetchQuotes(list), 60000);
+  };
 
   const handleStop = () => {
-    setIsMonitoring(false)
-    addLog('監控已停止', 'warn')
-  }
+    setIsMonitoring(false);
+    clearInterval(intervalRef.current);
+    addLog("監控已停止", "warn");
+  };
 
-  if (authStatus === 'loading') {
+  if (authStatus === "loading") {
     return (
       <div className="loading-screen">
         <div className="loading-spinner" />
         <p>驗證身份中...</p>
       </div>
-    )
+    );
   }
 
-  if (authStatus === 'unbound') {
+  if (authStatus === "unbound") {
     return (
       <div className="unbound-screen">
         <div className="unbound-content">
@@ -167,21 +221,29 @@ export default function App() {
           <h1>漲停雷達</h1>
           <p>請先透過 LINE 官方帳號完成頁面綁定</p>
           <div className="unbound-steps">
-            <div className="step"><span className="step-num">1</span>加入 LINE 官方帳號</div>
-            <div className="step"><span className="step-num">2</span>點選「身分登記」</div>
-            <div className="step"><span className="step-num">3</span>點選「頁面綁定」取得連結</div>
+            <div className="step">
+              <span className="step-num">1</span>加入 LINE 官方帳號
+            </div>
+            <div className="step">
+              <span className="step-num">2</span>點選「身分登記」
+            </div>
+            <div className="step">
+              <span className="step-num">3</span>點選「頁面綁定」取得連結
+            </div>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="app">
       <header className="header">
         <div className="header-left">
-          <span className={`status-dot ${isMonitoring ? 'active' : ''}`} />
-          <h1 className="logo">漲停雷達 <span className="bolt">⚡</span></h1>
+          <span className={`status-dot ${isMonitoring ? "active" : ""}`} />
+          <h1 className="logo">
+            漲停雷達 <span className="bolt">⚡</span>
+          </h1>
           <span className="logo-sub">LIMIT-UP SCANNER</span>
         </div>
         <Clock />
@@ -194,17 +256,27 @@ export default function App() {
             <textarea
               className="symbol-input"
               value={symbols}
-              onChange={e => setSymbols(e.target.value)}
-              placeholder={"每行輸入一個代號\n支援直接輸入 ETF：\n0050\n0056\n或個股：\n2330"}
+              onChange={(e) => setSymbols(e.target.value)}
+              placeholder={
+                "每行輸入一個代號\n支援直接輸入 ETF：\n0050\n0056\n或個股：\n2330"
+              }
               disabled={isMonitoring}
             />
           </section>
 
           <div className="btn-group">
-            <button className={`btn btn-start ${isMonitoring ? 'disabled' : ''}`} onClick={handleStart} disabled={isMonitoring}>
+            <button
+              className={`btn btn-start ${isMonitoring ? "disabled" : ""}`}
+              onClick={handleStart}
+              disabled={isMonitoring}
+            >
               ▶ 啟動監控
             </button>
-            <button className={`btn btn-stop ${!isMonitoring ? 'disabled' : ''}`} onClick={handleStop} disabled={!isMonitoring}>
+            <button
+              className={`btn btn-stop ${!isMonitoring ? "disabled" : ""}`}
+              onClick={handleStop}
+              disabled={!isMonitoring}
+            >
               ■ 停止
             </button>
           </div>
@@ -231,5 +303,5 @@ export default function App() {
         </section>
       </main>
     </div>
-  )
+  );
 }
