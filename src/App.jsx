@@ -168,7 +168,7 @@ export default function App() {
         params: { symbols: list.join(",") },
       });
       const quotes = data.quotes.filter(q => !q.error)
-      setQuotes(data);
+      setQuotes(quotes);
       const now = new Date();
       const next = new Date(now.getTime() + 60000);
       setStats({
