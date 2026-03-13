@@ -173,7 +173,7 @@ export default function App() {
       const next = new Date(now.getTime() + 60000);
       setStats({
         watchCount: list.length,
-        alertCount: data.filter((q) => q.limitUp).length,
+        alertCount: quotes.filter((q) => q.limitUp).length,
         lastUpdate: now.toLocaleTimeString("zh-TW", { hour12: false }),
         nextUpdate: next.toLocaleTimeString("zh-TW", { hour12: false }),
       });
