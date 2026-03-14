@@ -125,7 +125,7 @@ function WatchlistPanel({ watchlist, onAdd, onDelete, loading }) {
   return (
     <section className="panel">
       <div className="panel-label">自選股管理</div>
-      <div className="watchlist-add">
+      <div className="watchlist-add watchlist-add-row1">
         <input
           className="symbol-input-inline"
           value={input}
@@ -133,15 +133,17 @@ function WatchlistPanel({ watchlist, onAdd, onDelete, loading }) {
           placeholder="輸入股票代號"
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
         />
-        <select className="select-input" value={type} onChange={(e) => setType(e.target.value)}>
+      </div>
+      <div className="watchlist-add watchlist-add-row2">
+        <select className="select-input select-grow" value={type} onChange={(e) => setType(e.target.value)}>
           <option value="stock">個股</option>
           <option value="etf">ETF</option>
         </select>
-        <select className="select-input" value={tradeMode} onChange={(e) => setTradeMode(e.target.value)}>
+        <select className="select-input select-grow" value={tradeMode} onChange={(e) => setTradeMode(e.target.value)}>
           <option value="long_term">長期</option>
           <option value="day_trade">當沖</option>
         </select>
-        <button className="btn btn-add" onClick={handleAdd}>+</button>
+        <button className="btn-add" onClick={handleAdd}>+</button>
       </div>
 
       {loading ? (

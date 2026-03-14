@@ -102,8 +102,11 @@ body {
 
 /* ── Watchlist ── */
 .watchlist-add {
-  display: flex; gap: 6px; margin-bottom: 8px;
+  display: flex; gap: 6px; margin-bottom: 6px;
 }
+.watchlist-add-row1 { margin-bottom: 6px; }
+.watchlist-add-row2 { margin-bottom: 8px; }
+.select-grow { flex: 1; }
 .symbol-input-inline {
   flex: 1; min-width: 0;
   background: var(--bg); border: 1px solid var(--border2); border-radius: 4px;
