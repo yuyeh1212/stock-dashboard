@@ -31,6 +31,13 @@ function useAuth() {
       localStorage.getItem("access_token") ||
       localStorage.getItem("bind_token");
 
+    console.log(
+      "🔍 storedToken:",
+      storedToken?.slice(0, 20),
+      "authStatus will be:",
+      storedToken ? "bound" : "unbound",
+    );
+
     if (!storedToken) {
       setAuthStatus("unbound");
       return;
