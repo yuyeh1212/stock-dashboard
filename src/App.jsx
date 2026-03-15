@@ -12,7 +12,7 @@ function useAuth() {
     const error = urlParams.get("error");
 
     if (error === "user_not_found") {
-      alert("找不到你的 LINE 帳號，請先完成 A 身分登記");
+      alert("找不到你的 LINE 帳號，請先完成 身分登記");
       window.history.replaceState({}, "", window.location.pathname);
       setAuthStatus("unbound");
       return;
