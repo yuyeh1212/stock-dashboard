@@ -7,20 +7,29 @@ function useAuth() {
   const [authStatus, setAuthStatus] = useState("loading");
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessToken = urlParams.get("access_token");
-    const error = urlParams.get("error");
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const searchParams = new URLSearchParams(window.location.search);
+    const accessToken = hashParams.get("access_token");
+    const error = searchParams.get("error") || hashParams.get("error");
 
     if (error === "user_not_found") {
       alert("找不到你的 LINE 帳號，請先完成 身分登記");
-      window.history.replaceState({}, "", window.location.pathname);
+      window.history.replaceState(
+        {},
+        "",
+        window.location.pathname + window.location.search,
+      );
       setAuthStatus("unbound");
       return;
     }
 
     if (accessToken) {
       localStorage.setItem("access_token", accessToken);
-      window.history.replaceState({}, "", window.location.pathname);
+      window.history.replaceState(
+        {},
+        "",
+        window.location.pathname + window.location.search,
+      );
       setUser({ token: accessToken });
       setAuthStatus("bound");
       return;
