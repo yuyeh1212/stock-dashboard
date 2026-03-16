@@ -281,9 +281,20 @@ export default function App() {
   // 新增自選股
   const handleAddWatchlist = async ({ symbol, type, trade_mode }) => {
     try {
-      await api.post("/watchlist/", { symbol, type, trade_mode });
+      const { data } = await api.post("/watchlist/", {
+        symbol,
+        type,
+        trade_mode,
+      });
+
+      if (data.status === "already_exists") {
+        addLog(`${symbol} 已在自選股中`, "warn");
+        return;
+      }
+
+      // 直接添加到本地狀態，不需要重新載入整個列表
+      setWatchlist((prev) => [...prev, data.watchlist_item]);
       addLog(`新增 ${symbol}`, "success");
-      await loadWatchlist();
     } catch (e) {
       addLog(`新增失敗：${e.message}`, "error");
     }
