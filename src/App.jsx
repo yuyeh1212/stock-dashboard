@@ -14,38 +14,22 @@ function useAuth() {
 
     if (error === "user_not_found") {
       alert("找不到你的 LINE 帳號，請先完成 身分登記");
-      window.history.replaceState(
-        {},
-        "",
-        window.location.pathname + window.location.search,
-      );
+      window.history.replaceState({}, "", window.location.pathname + window.location.search);
       setAuthStatus("unbound");
       return;
     }
 
     if (accessToken) {
       localStorage.setItem("access_token", accessToken);
-      window.history.replaceState(
-        {},
-        "",
-        window.location.pathname + window.location.search,
-      );
+      window.history.replaceState({}, "", window.location.pathname + window.location.search);
       setUser({ token: accessToken });
       setAuthStatus("bound");
       return;
     }
 
-    // 相容舊的 bind_token
     const storedToken =
       localStorage.getItem("access_token") ||
       localStorage.getItem("bind_token");
-
-    console.log(
-      "🔍 storedToken:",
-      storedToken?.slice(0, 20),
-      "authStatus will be:",
-      storedToken ? "bound" : "unbound",
-    );
 
     if (!storedToken) {
       setAuthStatus("unbound");
@@ -75,9 +59,7 @@ function Clock() {
 function StatCard({ value, label, highlight }) {
   return (
     <div className="stat-card">
-      <div className={`stat-value ${highlight ? "highlight" : ""}`}>
-        {value}
-      </div>
+      <div className={`stat-value ${highlight ? "highlight" : ""}`}>{value}</div>
       <div className="stat-label">{label}</div>
     </div>
   );
@@ -108,38 +90,12 @@ function QuotePanel({ quotes, isMonitoring }) {
   if (!isMonitoring || quotes.length === 0) {
     return (
       <div className="quote-empty">
-        <svg
-          width="80"
-          height="80"
-          viewBox="0 0 80 80"
-          fill="none"
-          className="radar-svg"
-        >
+        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" className="radar-svg">
           <circle cx="40" cy="40" r="35" stroke="#1a3a3a" strokeWidth="2" />
           <circle cx="40" cy="40" r="22" stroke="#1a3a3a" strokeWidth="1.5" />
-          <circle
-            cx="40"
-            cy="40"
-            r="10"
-            stroke="#00ff88"
-            strokeWidth="1"
-            opacity="0.5"
-          />
-          <line
-            x1="40"
-            y1="40"
-            x2="40"
-            y2="5"
-            stroke="#00ff88"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-          <path
-            d="M40 40 L65 20"
-            stroke="#00ff88"
-            strokeWidth="1"
-            opacity="0.3"
-          />
+          <circle cx="40" cy="40" r="10" stroke="#00ff88" strokeWidth="1" opacity="0.5" />
+          <line x1="40" y1="40" x2="40" y2="5" stroke="#00ff88" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M40 40 L65 20" stroke="#00ff88" strokeWidth="1" opacity="0.3" />
         </svg>
         <p>載入自選股後自動啟動監控</p>
       </div>
@@ -159,11 +115,7 @@ function QuotePanel({ quotes, isMonitoring }) {
           </div>
           <div className="quote-price">{q.price}</div>
           <div className="quote-change">
-            {parseFloat(q.change) > 0
-              ? "▲"
-              : parseFloat(q.change) < 0
-                ? "▼"
-                : "─"}{" "}
+            {parseFloat(q.change) > 0 ? "▲" : parseFloat(q.change) < 0 ? "▼" : "─"}{" "}
             {Math.abs(parseFloat(q.change))}%
           </div>
         </div>
@@ -213,9 +165,7 @@ function WatchlistPanel({ watchlist, onAdd, onDelete, loading }) {
           <option value="long_term">長期</option>
           <option value="day_trade">當沖</option>
         </select>
-        <button className="btn-add" onClick={handleAdd}>
-          +
-        </button>
+        <button className="btn-add" onClick={handleAdd}>+</button>
       </div>
 
       {loading ? (
@@ -227,15 +177,8 @@ function WatchlistPanel({ watchlist, onAdd, onDelete, loading }) {
           {watchlist.map((item) => (
             <li key={item.id} className="watchlist-item">
               <span className="watchlist-symbol">{item.symbol}</span>
-              <span className="watchlist-meta">
-                {item.type} / {item.trade_mode}
-              </span>
-              <button
-                className="btn-delete"
-                onClick={() => onDelete(item.symbol)}
-              >
-                ✕
-              </button>
+              <span className="watchlist-meta">{item.type} / {item.trade_mode}</span>
+              <button className="btn-delete" onClick={() => onDelete(item.symbol)}>✕</button>
             </li>
           ))}
         </ul>
@@ -248,7 +191,12 @@ export default function App() {
   const { user, authStatus } = useAuth();
   const [watchlist, setWatchlist] = useState([]);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
-  const [isMonitoring, setIsMonitoring] = useState(false);
+
+  // 從 localStorage 恢復監控狀態，關掉頁面重開也維持
+  const [isMonitoring, setIsMonitoring] = useState(
+    () => localStorage.getItem("is_monitoring") === "true"
+  );
+
   const [logs, setLogs] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [stats, setStats] = useState({
@@ -258,14 +206,13 @@ export default function App() {
     nextUpdate: "--",
   });
 
+  const intervalRef = useRef(null);
+
   const addLog = (msg, type = "info") => {
     const time = new Date().toLocaleTimeString("zh-TW", { hour12: false });
     setLogs((prev) => [...prev.slice(-99), { time, msg, type }]);
   };
 
-  const intervalRef = useRef(null);
-
-  // 載入 watchlist
   const loadWatchlist = async () => {
     setWatchlistLoading(true);
     try {
@@ -278,21 +225,13 @@ export default function App() {
     }
   };
 
-  // 新增自選股
   const handleAddWatchlist = async ({ symbol, type, trade_mode }) => {
     try {
-      const { data } = await api.post("/watchlist/", {
-        symbol,
-        type,
-        trade_mode,
-      });
-
+      const { data } = await api.post("/watchlist/", { symbol, type, trade_mode });
       if (data.status === "already_exists") {
         addLog(`${symbol} 已在自選股中`, "warn");
         return;
       }
-
-      // 直接添加到本地狀態，不需要重新載入整個列表
       setWatchlist((prev) => [...prev, data.watchlist_item]);
       addLog(`新增 ${symbol}`, "success");
     } catch (e) {
@@ -300,7 +239,6 @@ export default function App() {
     }
   };
 
-  // 刪除自選股
   const handleDeleteWatchlist = async (symbol) => {
     try {
       await api.delete(`/watchlist/${symbol}`);
@@ -310,22 +248,6 @@ export default function App() {
       addLog(`刪除失敗：${e.message}`, "error");
     }
   };
-
-  // 登入後自動載入
-  useEffect(() => {
-    if (authStatus === "bound") loadWatchlist();
-  }, [authStatus]);
-
-  // watchlist 更新後自動重啟監控
-  useEffect(() => {
-    if (watchlist.length === 0) return;
-    const symbols = watchlist.map((w) => w.symbol);
-    if (isMonitoring) {
-      clearInterval(intervalRef.current);
-      fetchQuotes(symbols);
-      intervalRef.current = setInterval(() => fetchQuotes(symbols), 60000);
-    }
-  }, [watchlist]);
 
   const fetchQuotes = async (list) => {
     try {
@@ -347,23 +269,56 @@ export default function App() {
     }
   };
 
+  const startPolling = (list) => {
+    clearInterval(intervalRef.current);
+    fetchQuotes(list);
+    intervalRef.current = setInterval(() => fetchQuotes(list), 60000);
+  };
+
+  const stopPolling = () => {
+    clearInterval(intervalRef.current);
+    intervalRef.current = null;
+  };
+
+  // 登入後載入 watchlist
+  useEffect(() => {
+    if (authStatus === "bound") loadWatchlist();
+  }, [authStatus]);
+
+  // watchlist 載入完成後，如果原本是監控中就自動恢復輪詢
+  useEffect(() => {
+    if (watchlist.length === 0) return;
+    if (isMonitoring) {
+      const list = watchlist.map((w) => w.symbol);
+      addLog(`恢復監控 ${list.length} 檔：${list.join(", ")}`, "success");
+      startPolling(list);
+    }
+  }, [watchlist]);
+
   const handleStart = async () => {
     const list = watchlist.map((w) => w.symbol);
     if (list.length === 0) {
       addLog("請先新增自選股", "warn");
       return;
     }
+    localStorage.setItem("is_monitoring", "true");
     setIsMonitoring(true);
     addLog(`開始監控 ${list.length} 檔：${list.join(", ")}`, "success");
-    await fetchQuotes(list);
-    intervalRef.current = setInterval(() => fetchQuotes(list), 60000);
+    startPolling(list);
   };
 
   const handleStop = () => {
+    localStorage.setItem("is_monitoring", "false");
     setIsMonitoring(false);
-    clearInterval(intervalRef.current);
+    stopPolling();
+    setQuotes([]);
     addLog("監控已停止", "warn");
   };
+
+  // 頁面卸載時清除 interval（但不改 localStorage，下次開啟會恢復）
+  useEffect(() => {
+    return () => clearInterval(intervalRef.current);
+  }, []);
 
   if (authStatus === "loading") {
     return (
@@ -382,15 +337,9 @@ export default function App() {
           <h1>漲停雷達</h1>
           <p>請先透過 LINE 官方帳號完成頁面綁定</p>
           <div className="unbound-steps">
-            <div className="step">
-              <span className="step-num">1</span>加入 LINE 官方帳號
-            </div>
-            <div className="step">
-              <span className="step-num">2</span>點選「身分登記」
-            </div>
-            <div className="step">
-              <span className="step-num">3</span>點選「頁面綁定」取得連結
-            </div>
+            <div className="step"><span className="step-num">1</span>加入 LINE 官方帳號</div>
+            <div className="step"><span className="step-num">2</span>點選「身分登記」</div>
+            <div className="step"><span className="step-num">3</span>點選「頁面綁定」取得連結</div>
           </div>
         </div>
       </div>
@@ -402,9 +351,7 @@ export default function App() {
       <header className="header">
         <div className="header-left">
           <span className={`status-dot ${isMonitoring ? "active" : ""}`} />
-          <h1 className="logo">
-            漲停雷達 <span className="bolt">⚡</span>
-          </h1>
+          <h1 className="logo">漲停雷達 <span className="bolt">⚡</span></h1>
           <span className="logo-sub">LIMIT-UP SCANNER</span>
         </div>
         <Clock />
